@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
   KLT_TrackingContext tc;
   KLT_FeatureList fl;
   KLT_FeatureTable ft;
-  int nFeatures = 150, nFrames = 10;
+  int nFeatures = 1000, nFrames = 100;
   int ncols, nrows;
   int i;
 
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
   tc->writeInternalImages = FALSE;
   tc->affineConsistencyCheck = -1;  /* set this to 2 to turn on affine consistency check */
  
-  img1 = pgmReadFile("img0.pgm", NULL, &ncols, &nrows);
+  img1 = pgmReadFile("stone6_still_0001.pgm", NULL, &ncols, &nrows);
   img2 = (unsigned char *) malloc(ncols*nrows*sizeof(unsigned char));
 
   KLTSelectGoodFeatures(tc, img1, ncols, nrows, fl);
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
   KLTWriteFeatureListToPPM(fl, img1, ncols, nrows, "feat0.ppm");
 
   for (i = 1 ; i < nFrames ; i++)  {
-    sprintf(fnamein, "img%d.pgm", i);
+    sprintf(fnamein, "stone6_still_%.4d.pgm", i);
     pgmReadFile(fnamein, img2, &ncols, &nrows);
     KLTTrackFeatures(tc, img1, img2, ncols, nrows, fl);
 #ifdef REPLACE
@@ -77,6 +77,7 @@ int main(int argc, char *argv[])
 
 void write_pre(KLT_FeatureTable ft,char* fname){
     int i,j;
+    int focal=1781;
     FILE * fp;
     fp=fopen(fname,"wb");
    // Part 1: point_index camera_index feature_xy ;
@@ -102,6 +103,8 @@ void write_pre(KLT_FeatureTable ft,char* fname){
         float xj,yj;
          xj= (float) ft->feature[j][0]->x;
          yj= (float) ft->feature[j][0]->y;
+         xj= (width/2-xj)*(-0.3/focal);
+         yj= (height/2-yj)*(-0.3/focal);
         fprintf(fp, "%f \n%f \n%f \n",xj,yj,0.3 );
     }
    // Part 4: colour
@@ -112,7 +115,7 @@ void write_pre(KLT_FeatureTable ft,char* fname){
 
          png_bytep row = row_pointers[(int)yj];
          png_bytep px = &(row[(int)xj * 4]);
-         fprintf(fp,"%f, %4f = RGBA(%3d, %3d, %3d, %3d)\n", xj, yj, px[0], px[1], px[2], px[3]);
+         fprintf(fp,"%d %d %d \n", px[0], px[1], px[2]);
     }
 
 }
