@@ -13,6 +13,7 @@ klt.h
 klt_util.c
 klt_util.h
 kltcere.c
+libpngtest.c
 pnmio.c
 pnmio.h
 pyramid.c
