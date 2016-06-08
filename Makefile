@@ -58,7 +58,7 @@ example5: libklt.a
 	$(CC) -O3 $(CFLAGS) -o $@ $@.c -L. -lklt $(LIB) -lm
 
 kltcere: libklt.a
-	$(CC) -O3 $(CFLAGS) -o $@ $@.c -L. -lklt $(LIB) -lm
+	$(CC) -O3 $(CFLAGS) -o $@ $@.c -L. -lklt $(LIB) -lm -lpng
 
 libpngtest: libklt.a
 	$(CC) -O3 $(CFLAGS) -o $@ $@.c -L.  $(LIB) -lm -lpng
