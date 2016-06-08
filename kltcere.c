@@ -50,8 +50,8 @@ int main(int argc, char *argv[])
   KLTStoreFeatureList(fl, ft, 0);
   KLTWriteFeatureListToPPM(fl, img1, ncols, nrows, "feat0.ppm");
 
-  for (i = 1 ; i < nFrames ; i++)  {
-    sprintf(fnamein, "stone6_still_%.4d.pgm", i);
+  for (i = 0 ; i < nFrames ; i++)  {
+    sprintf(fnamein, "stone6_still_%.4d.pgm", i+1);
     pgmReadFile(fnamein, img2, &ncols, &nrows);
     KLTTrackFeatures(tc, img1, img2, ncols, nrows, fl);
 #ifdef REPLACE
@@ -77,6 +77,8 @@ int main(int argc, char *argv[])
 
 void write_pre(KLT_FeatureTable ft,char* fname){
     int i,j;
+    float xj,yj;
+    int observation_num=0;
     int focal=1781;
     FILE * fp;
     fp=fopen(fname,"wb");
@@ -84,10 +86,13 @@ void write_pre(KLT_FeatureTable ft,char* fname){
     for (j = 0 ; j < ft->nFeatures ; j++)  {
       for (i = 0 ; i < ft->nFrames ; i++){
       if (ft->feature[j][i]->x>0){
-      fprintf(fp, "%d ", j);
       fprintf(fp, "%d ", i);
-      fprintf(fp, "%f %f", (float) ft->feature[j][i]->x, (float) ft->feature[j][i]->y);
+      fprintf(fp, "%d ", j);
+      xj=width/2-(float) ft->feature[j][i]->x;
+      yj=height/2-(float) ft->feature[j][i]->y;
+      fprintf(fp, "%f %f", xj,yj);
       fprintf(fp, "\n");
+      observation_num=observation_num+1;
       }
       }
     }
@@ -100,7 +105,7 @@ void write_pre(KLT_FeatureTable ft,char* fname){
     }
    // Part 3: 3D points based on img0
     for (j = 0 ; j < ft->nFeatures ; j++)  {
-        float xj,yj;
+
          xj= (float) ft->feature[j][0]->x;
          yj= (float) ft->feature[j][0]->y;
          xj= (width/2-xj)*(-0.3/focal);
@@ -112,12 +117,12 @@ void write_pre(KLT_FeatureTable ft,char* fname){
         float xj,yj;
          xj= (float) ft->feature[j][0]->x;
          yj= (float) ft->feature[j][0]->y;
-
          png_bytep row = row_pointers[(int)yj];
          png_bytep px = &(row[(int)xj * 4]);
          fprintf(fp,"%d %d %d \n", px[0], px[1], px[2]);
     }
-
+   // Part 5: camera_num point_num observation
+         fprintf(fp,"%d %d %d \n",ft->nFrames, ft->nFeatures,observation_num);
 }
 
 
