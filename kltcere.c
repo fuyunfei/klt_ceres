@@ -32,18 +32,21 @@ int main(int argc, char *argv[])
   KLT_TrackingContext tc;
   KLT_FeatureList fl;
   KLT_FeatureTable ft;
-  int nFeatures = 1000, nFrames = 100;
+  int nFeatures = 1000, nFrames = 20;
   int ncols, nrows;
   int i;
 
   tc = KLTCreateTrackingContext();
+  tc->mindist = 20;
+  tc->window_width  = 10;
+  tc->window_height = 10;
   fl = KLTCreateFeatureList(nFeatures);
   ft = KLTCreateFeatureTable(nFrames, nFeatures);
   tc->sequentialMode = TRUE;
   tc->writeInternalImages = FALSE;
   tc->affineConsistencyCheck = -1;  /* set this to 2 to turn on affine consistency check */
  
-  img1 = pgmReadFile("stone6_still_0001.pgm", NULL, &ncols, &nrows);
+  img1 = pgmReadFile("tiny/pgm/stone6_still_0001.pgm", NULL, &ncols, &nrows);
   img2 = (unsigned char *) malloc(ncols*nrows*sizeof(unsigned char));
 
   KLTSelectGoodFeatures(tc, img1, ncols, nrows, fl);
@@ -51,18 +54,19 @@ int main(int argc, char *argv[])
   KLTWriteFeatureListToPPM(fl, img1, ncols, nrows, "feat0.ppm");
 
   for (i = 0 ; i < nFrames ; i++)  {
-    sprintf(fnamein, "stone6_still_%.4d.pgm", i+1);
+    sprintf(fnamein, "tiny/pgm/stone6_still_%.4d.pgm", i*5+1);
     pgmReadFile(fnamein, img2, &ncols, &nrows);
     KLTTrackFeatures(tc, img1, img2, ncols, nrows, fl);
 #ifdef REPLACE
     KLTReplaceLostFeatures(tc, img2, ncols, nrows, fl);
 #endif
     KLTStoreFeatureList(fl, ft, i);
-    sprintf(fnameout, "feat%d.ppm", i);
+    KLTWriteFeatureList(fl, "feat2.txt", "%5f");
+    sprintf(fnameout, "tiny/feat%d.ppm", i);
     KLTWriteFeatureListToPPM(fl, img2, ncols, nrows, fnameout);
   }
 
-    write_pre(ft,"pre.txt");
+    write_pre(ft,"klt.txt");
 //  KLTWriteFeatureTable(ft, "features.txt", "%5.1f");
 //  KLTWriteFeatureTable(ft, "features.ft", NULL);
 
@@ -78,16 +82,28 @@ int main(int argc, char *argv[])
 void write_pre(KLT_FeatureTable ft,char* fname){
     int i,j;
     float xj,yj;
-    int observation_num=0;
+    int observation_num=0;int point_index =0; int wj =3;
     int focal=1781;
+    int select[1000]={0};
     FILE * fp;
     fp=fopen(fname,"wb");
+   // Part 0 : select feature j as outlier
+    for (j = 0 ; j < ft->nFeatures ; j++)  {
+      for (i = 0 ; i < ft->nFrames ; i++){
+      if (ft->feature[j][i]->x<0){
+          select[j]=1;
+      }
+    }
+    }
+
+
    // Part 1: point_index camera_index feature_xy ;
     for (j = 0 ; j < ft->nFeatures ; j++)  {
+      if (!select[j]){
       for (i = 0 ; i < ft->nFrames ; i++){
       if (ft->feature[j][i]->x>0){
       fprintf(fp, "%d ", i);
-      fprintf(fp, "%d ", j);
+      fprintf(fp, "%d ", point_index);
       xj=width/2-(float) ft->feature[j][i]->x;
       yj=height/2-(float) ft->feature[j][i]->y;
       fprintf(fp, "%f %f", xj,yj);
@@ -95,6 +111,9 @@ void write_pre(KLT_FeatureTable ft,char* fname){
       observation_num=observation_num+1;
       }
       }
+     point_index=point_index+1;
+      }
+
     }
    // Part 2: intrinsic
     for (i = 0 ; i < ft->nFrames ; i++){
@@ -105,24 +124,27 @@ void write_pre(KLT_FeatureTable ft,char* fname){
     }
    // Part 3: 3D points based on img0
     for (j = 0 ; j < ft->nFeatures ; j++)  {
-
+     if (!select[j]){
          xj= (float) ft->feature[j][0]->x;
          yj= (float) ft->feature[j][0]->y;
-         xj= (width/2-xj)*(-0.3/focal);
-         yj= (height/2-yj)*(-0.3/focal);
-        fprintf(fp, "%f \n%f \n%f \n",xj,yj,0.3 );
+         xj= (width/2-xj)*(-wj/focal);
+         yj= (height/2-yj)*(-wj/focal);
+        fprintf(fp, "%f \n%f \n%f \n",xj,yj,wj );
+     }
     }
    // Part 4: colour
     for (j = 0 ; j < ft->nFeatures ; j++)  {
+        if (!select[j]){
         float xj,yj;
          xj= (float) ft->feature[j][0]->x;
          yj= (float) ft->feature[j][0]->y;
          png_bytep row = row_pointers[(int)yj];
          png_bytep px = &(row[(int)xj * 4]);
          fprintf(fp,"%d %d %d \n", px[0], px[1], px[2]);
+        }
     }
    // Part 5: camera_num point_num observation
-         fprintf(fp,"%d %d %d \n",ft->nFrames, ft->nFeatures,observation_num);
+         fprintf(fp,"%d %d %d \n",ft->nFrames, point_index,observation_num);
 }
 
 
