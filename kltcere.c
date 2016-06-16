@@ -11,7 +11,7 @@ saved to a text file; each feature list is also written to a PPM file.
 #include "klt.h"
 #include <png.h>
 
-int width, height;
+float width, height;
 png_byte color_type;
 png_byte bit_depth;
 png_bytep *row_pointers;
@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
   KLT_TrackingContext tc;
   KLT_FeatureList fl;
   KLT_FeatureTable ft;
-  int nFeatures = 1000, nFrames = 20;
+  int nFeatures = 1000, nFrames = 100;
   int ncols, nrows;
   int i;
 
@@ -40,6 +40,8 @@ int main(int argc, char *argv[])
   tc->mindist = 20;
   tc->window_width  = 10;
   tc->window_height = 10;
+  tc->grad_sigma=2;
+  tc->min_displacement=100;
   fl = KLTCreateFeatureList(nFeatures);
   ft = KLTCreateFeatureTable(nFrames, nFeatures);
   tc->sequentialMode = TRUE;
@@ -54,7 +56,7 @@ int main(int argc, char *argv[])
   KLTWriteFeatureListToPPM(fl, img1, ncols, nrows, "feat0.ppm");
 
   for (i = 0 ; i < nFrames ; i++)  {
-    sprintf(fnamein, "tiny/pgm/stone6_still_%.4d.pgm", i*5+1);
+    sprintf(fnamein, "tiny/pgm/stone6_still_%.4d.pgm", i+1);
     pgmReadFile(fnamein, img2, &ncols, &nrows);
     KLTTrackFeatures(tc, img1, img2, ncols, nrows, fl);
 #ifdef REPLACE
@@ -66,7 +68,7 @@ int main(int argc, char *argv[])
     KLTWriteFeatureListToPPM(fl, img2, ncols, nrows, fnameout);
   }
 
-    write_pre(ft,"klt.txt");
+    write_pre(ft,"klt_100.txt");
 //  KLTWriteFeatureTable(ft, "features.txt", "%5.1f");
 //  KLTWriteFeatureTable(ft, "features.ft", NULL);
 
@@ -82,8 +84,8 @@ int main(int argc, char *argv[])
 void write_pre(KLT_FeatureTable ft,char* fname){
     int i,j;
     float xj,yj;
-    int observation_num=0;int point_index =0; int wj =3;
-    int focal=1781;
+    int observation_num=0;int point_index =0; float wj =0.3;
+    float focal=1781;
     int select[1000]={0};
     FILE * fp;
     fp=fopen(fname,"wb");
@@ -127,8 +129,8 @@ void write_pre(KLT_FeatureTable ft,char* fname){
      if (!select[j]){
          xj= (float) ft->feature[j][0]->x;
          yj= (float) ft->feature[j][0]->y;
-         xj= (width/2-xj)*(-wj/focal);
-         yj= (height/2-yj)*(-wj/focal);
+         xj= (width/2-xj)*(-1/focal);
+         yj= (height/2-yj)*(-1/focal);
         fprintf(fp, "%f \n%f \n%f \n",xj,yj,wj );
      }
     }
