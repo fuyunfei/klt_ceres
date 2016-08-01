@@ -25,7 +25,7 @@ CFLAGS = $(FLAG1) $(FLAG2)
 # There should be no need to modify anything below this line (but
 # feel free to if you want).
 
-EXAMPLES = example1.c example2.c example3.c example4.c example5.c kltcere.c libpngtest.c
+EXAMPLES = example1.c example2.c example3.c example4.c example5.c kltcere.cpp libpngtest.c
 ARCH = convolve.c error.c pnmio.c pyramid.c selectGoodFeatures.c \
        storeFeatures.c trackFeatures.c klt.c klt_util.c writeFeatures.c
 LIB = -L/usr/local/lib -L/usr/lib -L/usr/include
@@ -35,12 +35,12 @@ LIB = -L/usr/local/lib -L/usr/lib -L/usr/include
 all:  lib $(EXAMPLES:.c=)
 
 .c.o:
-	$(CC) -c $(CFLAGS) $<
+	$(CC) -c $(CFLAGS) $<  -lm -lstdc++
 
-lib: $(ARCH:.c=.o)
+lib: $(ARCH:.c=.o)  
 	rm -f libklt.a
-	ar ruv libklt.a $(ARCH:.c=.o)
-	rm -f *.o
+	ar ruv libklt.a $(ARCH:.c=.o)  
+#	rm -f *.o
 
 example1: libklt.a
 	$(CC) -O3 $(CFLAGS) -o $@ $@.c -L. -lklt $(LIB) -lm
@@ -57,8 +57,8 @@ example4: libklt.a
 example5: libklt.a
 	$(CC) -O3 $(CFLAGS) -o $@ $@.c -L. -lklt $(LIB) -lm
 
-kltcere: libklt.a
-	$(CC) -O3 $(CFLAGS) -o $@ $@.c -L. -lklt $(LIB) -lm -lpng
+kltcere: libklt.a plytofl.cc
+	$(CC) -O3 $(CFLAGS) -o $@ $@.c   plytofl.cc -L. -lklt $(LIB) -lm -lpng -lstdc++
 
 libpngtest: libklt.a
 	$(CC) -O3 $(CFLAGS) -o $@ $@.c -L.  $(LIB) -lm -lpng
